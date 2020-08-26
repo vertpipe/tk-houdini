@@ -238,7 +238,7 @@ class HoudiniSessionCollector(HookBaseClass):
             # allow the base class to collect and create the item. it
             # should know how to handle the output path
             item = super(HoudiniSessionCollector, self)._collect_file(
-                parent_item, out_path
+                parent_item, out_path, frame_sequence=True
             )
 
             # the item has been created. update the display name to
