@@ -246,8 +246,18 @@ class HoudiniSessionCollector(HookBaseClass):
             # was collected within the current session.
             item.name = "%s (%s)" % (item.name, node.path())
 
+            # if work_template:
+            #     item.properties["work_template"] = work_template
+            #     self.logger.info("Set work_template property on node.")
+            # else:
+            #     self.logger.warning("Could not set work_template property. Will start versioning at 1.")
+
             if work_template:
-                item.properties["work_template"] = work_template
+                publish_version = work_template.get_fields(hou.hipFile.path())["version"]
+                item.properties["publish_version"] = publish_version
+                self.logger.info("Setting version number to %i" % (publish_version))
+            else:
+                self.logger.warning("Failed to set version number, check if all tk-houdini-cachenode settings are configured correctly!")
 
     def collect_tk_alembicnodes(self, parent_item):
         """
