@@ -225,6 +225,7 @@ class HoudiniSessionCollector(HookBaseClass):
         # retrieve the work file template defined by the app. we'll set this
         # on the collected cachenode items for use during publishing.
         work_template = cachenode_app.get_work_file_template()
+        publish_template = cachenode_app.get_publish_file_template()
 
         for node in tk_cache_nodes:
 
@@ -246,18 +247,17 @@ class HoudiniSessionCollector(HookBaseClass):
             # was collected within the current session.
             item.name = "%s (%s)" % (item.name, node.path())
 
-            # if work_template:
-            #     item.properties["work_template"] = work_template
-            #     self.logger.info("Set work_template property on node.")
-            # else:
-            #     self.logger.warning("Could not set work_template property. Will start versioning at 1.")
-
             if work_template:
-                publish_version = work_template.get_fields(hou.hipFile.path())["version"]
-                item.properties["publish_version"] = publish_version
-                self.logger.info("Setting version number to %i" % (publish_version))
+                item.properties["work_template"] = work_template
+                self.logger.info("Set work_template property on %s" % (node))
             else:
-                self.logger.warning("Failed to set version number, check if all tk-houdini-cachenode settings are configured correctly!")
+                self.logger.warning("Could not set work_template property. Will start versioning at 1.")
+
+            if publish_template:
+                item.properties["publish_template"] = publish_template
+                self.logger.info("Set publish_template property on %s" % (node))
+            else:
+                self.logger.warning("Could not set publish_template property. Will use working template as output.")
 
     def collect_tk_alembicnodes(self, parent_item):
         """

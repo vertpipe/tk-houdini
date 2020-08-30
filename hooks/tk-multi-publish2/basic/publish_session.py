@@ -282,6 +282,7 @@ class HoudiniSessionPublishPlugin(HookBaseClass):
         )
         if publish_template:
             item.properties["publish_template"] = publish_template
+            self.logger.info("Populated item with publish template: %s" % (publish_template))
 
         # set the session path on the item for use by the base plugin validation
         # step. NOTE: this path could change prior to the publish phase.
