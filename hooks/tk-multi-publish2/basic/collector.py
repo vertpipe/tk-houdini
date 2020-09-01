@@ -231,7 +231,10 @@ class HoudiniSessionCollector(HookBaseClass):
 
             out_path = cachenode_app.get_output_path(node)
 
+            self.logger.debug("out_path is %s" % (out_path))
+
             if not os.path.exists(out_path):
+                self.logger.warning("out_path was not validated.")
                 continue
 
             self.logger.info("Processing sgtk_cache node: %s" % (node.path(),))

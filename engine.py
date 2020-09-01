@@ -301,8 +301,8 @@ class HoudiniEngine(sgtk.platform.Engine):
             # Add the function as an event loop callback.
             hou.ui.addEventLoopCallback(run_when_idle)
 
-        startup = tk_houdini.startup
-        startup.setFrameRange(1001, 1240)
+        # startup = tk_houdini.startup
+        # startup.setFrameRange(1001, 1240)
 
     def destroy_engine(self):
         """
