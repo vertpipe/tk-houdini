@@ -84,11 +84,13 @@ class HoudiniSessionCollector(HookBaseClass):
         # remember if we collect any alembic/mantra nodes
         self._alembic_nodes_collected = False
         self._mantra_nodes_collected = False
+        self._arnold_nodes_collected = False
 
         # methods to collect tk alembic/mantra/cache nodes if the app is installed
         self.collect_tk_alembicnodes(item)
         self.collect_tk_mantranodes(item)
         self.collect_tk_cachenodes(item)
+        self.collect_tk_arnoldnodes(item)
 
         # collect other, non-toolkit outputs to present for publishing
         self.collect_node_outputs(item)
@@ -217,8 +219,7 @@ class HoudiniSessionCollector(HookBaseClass):
             tk_cache_nodes = cachenode_app.get_nodes()
         except AttributeError:
             self.logger.warning(
-                "Unable to query the session for tk-houdini-cachenode "
-                "instances."
+                "Unable to query the session for tk-houdini-cachenode " "instances."
             )
             return
 
@@ -254,13 +255,17 @@ class HoudiniSessionCollector(HookBaseClass):
                 item.properties["work_template"] = work_template
                 self.logger.info("Set work_template property on %s" % (node))
             else:
-                self.logger.warning("Could not set work_template property. Will start versioning at 1.")
+                self.logger.warning(
+                    "Could not set work_template property. Will start versioning at 1."
+                )
 
             if publish_template:
                 item.properties["publish_template"] = publish_template
                 self.logger.info("Set publish_template property on %s" % (node))
             else:
-                self.logger.warning("Could not set publish_template property. Will use working template as output.")
+                self.logger.warning(
+                    "Could not set publish_template property. Will use working template as output."
+                )
 
     def collect_tk_alembicnodes(self, parent_item):
         """
@@ -379,3 +384,76 @@ class HoudiniSessionCollector(HookBaseClass):
                 item.properties["work_template"] = work_template
 
             self._mantra_nodes_collected = True
+
+    def collect_tk_arnoldnodes(self, parent_item):
+        # check if arnold app is installed and get all written-to-disk outputs
+
+        publisher = self.parent
+        engine = publisher.engine
+
+        # check if arnold app is installed
+        app = engine.apps.get("tk-houdini-arnold")
+        if not app:
+            self.logger.debug(
+                "The tk-houdini-arnold app is not installed. Skipping collection of those nodes."
+            )
+            return
+
+        # collect all node instances
+        try:
+            nodes = app.handler.getNodes()
+        except Exception as e:
+            self.logger.error(e)
+
+        work_template = app.getWorkFileTemplate()
+
+        # run collection on every node instance found
+        for node in nodes:
+
+            out_path = app.handler.getOutputPath(node)
+
+            if not os.path.exists(out_path):
+                continue
+
+            self.logger.info("Processing sgtk_arnold node: %s" % node.path())
+
+            # create the actual sub-item
+            item = super(HoudiniSessionCollector, self)._collect_file(
+                parent_item, out_path, frame_sequence=True
+            )
+
+            # item created, update gui
+            item.name = "Beauty Render (%s)" % (node.path())
+
+            # run for aovs
+            self.__collect_tk_arnoldaovs(node, item, app)
+
+            # update item with work_template for later fields use
+            if work_template:
+                item.properties["work_template"] = work_template
+
+            self._arnold_nodes_collected = True
+
+    def __collect_tk_arnoldaovs(self, node, parent_item, app):
+        # creates items for every enabled aov
+
+        # get aov enable parameters
+        parms = app.handler.getDifferentFileAOVs(node)
+        aovs = {}
+
+        for parm in parms:
+            parmNumber = parm.name().replace("ar_aov_separate", "")
+            if parm.eval():
+                aovName = node.parm("ar_aov_label%s" % (parmNumber)).eval()
+                aovs[aovName] = node.parm("ar_aov_separate_file%s" % parmNumber).eval()
+
+        for aov in aovs.items():
+            if not os.path.exists(aov[1]):
+                continue
+
+            item = super(HoudiniSessionCollector, self)._collect_file(
+                parent_item, aov[1], frame_sequence=True
+            )
+
+            # sub-item created, update gui
+            item.name = "%s AOV Render" % (aov[0])
