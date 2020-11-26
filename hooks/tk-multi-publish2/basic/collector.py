@@ -89,8 +89,8 @@ class HoudiniSessionCollector(HookBaseClass):
         # methods to collect tk alembic/mantra/cache nodes if the app is installed
         self.collect_tk_alembicnodes(item)
         self.collect_tk_mantranodes(item)
-        self.collect_tk_cachenodes(item)
         self.collect_tk_arnoldnodes(item)
+        self.collect_tk_cachenodes(item)
 
         # collect other, non-toolkit outputs to present for publishing
         self.collect_node_outputs(item)
@@ -402,8 +402,8 @@ class HoudiniSessionCollector(HookBaseClass):
         # collect all node instances
         try:
             nodes = app.handler.getNodes()
-        except Exception as e:
-            self.logger.error(e)
+        except:
+            self.logger.error("Could not receive arnold node instances.")
 
         work_template = app.getWorkFileTemplate()
 
@@ -429,6 +429,11 @@ class HoudiniSessionCollector(HookBaseClass):
             if work_template:
                 item.properties["work_template"] = work_template
 
+            self.logger.info(
+                "Setting publish name to %s"
+                % (publisher.util.get_publish_name(out_path, sequence=True))
+            )
+
             # run for aovs
             self.__collect_tk_arnoldaovs(node, item, app, work_template)
 
@@ -436,6 +441,7 @@ class HoudiniSessionCollector(HookBaseClass):
 
     def __collect_tk_arnoldaovs(self, node, parent_item, app, work_template):
         # creates items for every enabled aov
+        publisher = self.parent
 
         # get aov enable parameters
         parms = app.handler.getDifferentFileAOVs(node)
@@ -461,3 +467,8 @@ class HoudiniSessionCollector(HookBaseClass):
             # add worktemplate to every subitem
             if work_template:
                 item.properties["work_template"] = work_template
+
+            self.logger.info(
+                "Setting publish name to %s"
+                % (publisher.util.get_publish_name(aov[1], sequence=True))
+            )
