@@ -425,16 +425,16 @@ class HoudiniSessionCollector(HookBaseClass):
             # item created, update gui
             item.name = "Beauty Render (%s)" % (node.path())
 
-            # run for aovs
-            self.__collect_tk_arnoldaovs(node, item, app)
-
             # update item with work_template for later fields use
             if work_template:
                 item.properties["work_template"] = work_template
 
+            # run for aovs
+            self.__collect_tk_arnoldaovs(node, item, app, work_template)
+
             self._arnold_nodes_collected = True
 
-    def __collect_tk_arnoldaovs(self, node, parent_item, app):
+    def __collect_tk_arnoldaovs(self, node, parent_item, app, work_template):
         # creates items for every enabled aov
 
         # get aov enable parameters
@@ -457,3 +457,7 @@ class HoudiniSessionCollector(HookBaseClass):
 
             # sub-item created, update gui
             item.name = "%s AOV Render" % (aov[0])
+
+            # add worktemplate to every subitem
+            if work_template:
+                item.properties["work_template"] = work_template
