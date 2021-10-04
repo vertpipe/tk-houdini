@@ -120,17 +120,17 @@ class AppCommandsMenu(AppCommandsUI):
         self._context_menu_item_id = None
 
     def create_menu(self, xml_path):
-        """ Create the Shotgun Menu """
+        """ Create the SG Menu """
 
         import hou
 
         # houdini 15+ allows for dynamic menu creation, so do that if possible.
         # otherwise, fallback to the static menu
         if hou.applicationVersion()[0] >= 15:
-            self._engine.logger.debug("Constructing dynamic Shotgun menu.")
+            self._engine.logger.debug("Constructing dynamic SG menu.")
             self._create_dynamic_menu(xml_path)
         else:
-            self._engine.logger.debug("Constructing static Shotgun menu.")
+            self._engine.logger.debug("Constructing static SG menu.")
             self._create_static_menu(xml_path)
 
     def _get_context_commands(self):
@@ -211,7 +211,7 @@ class AppCommandsMenu(AppCommandsUI):
         return self._commands_by_app
 
     def _build_shotgun_menu_item(self):
-        """Constructs a top-level "Shotgun" menu.
+        """Constructs a top-level "ShotGrid" menu.
 
         Same logic for both the static and dynamic menu.
 
@@ -221,7 +221,7 @@ class AppCommandsMenu(AppCommandsUI):
 
         root = ET.Element("mainMenu")
         menubar = ET.SubElement(root, "menuBar")
-        shotgun_menu = self._menuNode(menubar, "Shotgun", "tk.shotgun")
+        shotgun_menu = self._menuNode(menubar, "ShotGrid", "tk.shotgun")
         insert_before = ET.SubElement(shotgun_menu, "insertBefore")
         insert_before.text = "help_menu"
 
@@ -485,7 +485,7 @@ class AppCommandsPanelHandler(AppCommandsUI):
 
 
 class AppCommandsShelf(AppCommandsUI):
-    def __init__(self, engine, commands=None, name="Shotgun", label="Shotgun"):
+    def __init__(self, engine, commands=None, name="ShotGrid", label="ShotGrid"):
         """Initialize the shotgun commands shelf.
 
             engine:
@@ -717,7 +717,7 @@ def get_registered_commands(engine):
         not registered, but always present in the shotgun menu and shelves.
         Those commands are:
 
-            "Jump to Shotgun"
+            "Jump to ShotGrid"
             "Jump to File System"
     """
 
@@ -730,10 +730,10 @@ def get_registered_commands(engine):
     )
 
     jump_to_sg_cmd = AppCommand(
-        name="Jump to Shotgun",
+        name="Jump to ShotGrid",
         command_dict={
             "properties": {
-                "description": "Open the current Shotgun context in your web browser.",
+                "description": "Open the current SG context in your web browser.",
                 "icon": sg_icon.replace("\\", "/"),  # account for UNC path
                 "type": "context_menu",
             },
@@ -755,7 +755,7 @@ def get_registered_commands(engine):
             command_dict={
                 "properties": {
                     "icon": fs_icon.replace("\\", "/"),  # account for UNC path
-                    "description": "Open the current Shotgun context in your file browser.",
+                    "description": "Open the current SG context in your file browser.",
                     "type": "context_menu",
                 },
                 "callback": lambda: _jump_to_fs(engine),
@@ -1052,7 +1052,7 @@ import tank.platform.engine
 
 engine = tank.platform.engine.current_engine()
 if engine is None or not hasattr(engine, 'launch_command'):
-    msg = "Shotgun: Houdini engine is not loaded."
+    msg = "ShotGrid: Houdini engine is not loaded."
     if hou.isUIAvailable():
         hou.ui.displayMessage(msg)
     else:
@@ -1108,8 +1108,8 @@ def createInterface():
         import tank.platform.engine
     except ImportError:
         return NoPanelWidget(
-            "It looks like you're running Houdini outside of a Shotgun "
-            "context. Next time you launch Houdini from within a Shotgun "
+            "It looks like you're running Houdini outside of a SG "
+            "context. Next time you launch Houdini from within a SG "
             "context, you will see the '%s' panel here."
         )
 
@@ -1209,11 +1209,11 @@ try:
     # special id if there is no shotgun context/engine
     if command_id == "tk.houdini.menu.no.shotgun":
         msg = (
-            "It appears as though you are not currently working in a Shotgun "
-            "context. There is no Shotgun for Houdini Engine running so no "
-            "menu or shelf items are available. In order to restart the Shotgun "
+            "It appears as though you are not currently working in a SG "
+            "context. There is no SG for Houdini Engine running so no "
+            "menu or shelf items are available. In order to restart the SG "
             "integration, please close and reopen Houdini or choose a file "
-            "from your Shotgun project in the 'Recent Files' menu. If you "
+            "from your SG project in the 'Recent Files' menu. If you "
             "believe this to be an error, please contact your support team."
         )
         hou.ui.displayMessage(msg, severity=hou.severityType.Warning)
@@ -1235,7 +1235,7 @@ try:
         engine.launch_command(command_id)
 except Exception as e:
     # handle any exceptions raised during menu building
-    msg = "An error occurred building the Shotgun menu...\\n\\n%s" % (e,)
+    msg = "An error occurred building the SG menu...\\n\\n%s" % (e,)
     if engine:
         hou.ui.displayMessage(msg, severity=hou.severityType.Error)
     else:
