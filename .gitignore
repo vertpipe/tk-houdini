@@ -25,6 +25,9 @@ htmlcov
 #Translations
 *.mo
 
+# Project settings
+.idea/
+
 #Mr Developer
 .mr.developer.cfg
 

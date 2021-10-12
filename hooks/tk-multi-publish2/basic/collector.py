@@ -91,6 +91,7 @@ class HoudiniSessionCollector(HookBaseClass):
         self.collect_tk_mantranodes(item)
         self.collect_tk_arnoldnodes(item)
         self.collect_tk_cachenodes(item)
+        self.collect_tk_usdropnodes(item)
 
         # collect other, non-toolkit outputs to present for publishing
         self.collect_node_outputs(item)
@@ -245,6 +246,75 @@ class HoudiniSessionCollector(HookBaseClass):
             item = super(HoudiniSessionCollector, self)._collect_file(
                 parent_item, out_path, frame_sequence=True
             )
+
+            # the item has been created. update the display name to
+            # include the node path to make it clear to the user how it
+            # was collected within the current session.
+            item.name = "%s (%s)" % (item.name, node.path())
+
+            if work_template:
+                item.properties["work_template"] = work_template
+                self.logger.info("Set work_template property on %s" % (node))
+            else:
+                self.logger.warning(
+                    "Could not set work_template property. Will start versioning at 1."
+                )
+
+            if publish_template:
+                item.properties["publish_template"] = publish_template
+                self.logger.info("Set publish_template property on %s" % (node))
+            else:
+                self.logger.warning(
+                    "Could not set publish_template property. Will use working template as output."
+                )
+
+    def collect_tk_usdropnodes(self, parent_item):
+        """
+        Checks for an installed `tk-houdini-usdrop` app. If installed, will
+        search for instances of the node in the current session and create an
+        item for each one with an output on disk.
+        :param parent_item: The item to parent new items to.
+        """
+
+        publisher = self.parent
+        engine = publisher.engine
+
+        usdrop_app = engine.apps.get("tk-houdini-usdrop")
+        if not usdrop_app:
+            self.logger.debug(
+                "The tk-houdini-usdrop node app is not installed. "
+                "Will not attempt to collect those nodes."
+            )
+            return
+
+        tk_usdrop_nodes = usdrop_app.get_nodes()
+
+        # retrieve the work file template defined by the app. we'll set this
+        # on the collected USD rop node items for use during publishing.
+        work_template = usdrop_app.get_work_file_template()
+        publish_template = usdrop_app.get_publish_file_template()
+
+        for node in tk_usdrop_nodes:
+
+            output_path = usdrop_app.get_output_path(node)
+
+            self.logger.debug("out_path is %s" % (output_path))
+
+            if not os.path.exists(output_path):
+                self.logger.warning("out_path was not validated.")
+                continue
+
+            self.logger.info("Processing sgtk_usdrop node: %s" % (node.path(),))
+
+            # allow the base class to collect and create the item. it
+            # should know how to handle the output path
+            item = super(HoudiniSessionCollector, self)._collect_file(
+                parent_item, output_path, frame_sequence=False
+            )
+
+            # get the icon path to display for this item
+            icon_path = os.path.join(self.disk_location, os.pardir, "icons", "usd.png")
+            item.set_icon_from_path(icon_path)
 
             # the item has been created. update the display name to
             # include the node path to make it clear to the user how it
