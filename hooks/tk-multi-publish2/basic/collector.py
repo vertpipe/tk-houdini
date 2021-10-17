@@ -480,7 +480,7 @@ class HoudiniSessionCollector(HookBaseClass):
         try:
             nodes = app.handler.getNodes()
         except Exception as e:
-            self.logger.error("Could not receive arnold node instances.")
+            self.logger.error("Could not receive arnold node instances. %s" % str(e))
 
         work_template = app.getWorkFileTemplate()
 
