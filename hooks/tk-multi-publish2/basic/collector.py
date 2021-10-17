@@ -469,10 +469,17 @@ class HoudiniSessionCollector(HookBaseClass):
             )
             return
 
+        htoa_env = os.getenv('HTOA')
+        if not htoa_env:
+            self.logger.debug(
+                "Arnold is not loaded. Skipping collection of Arnold nodes."
+            )
+            return
+
         # collect all node instances
         try:
             nodes = app.handler.getNodes()
-        except:
+        except Exception as e:
             self.logger.error("Could not receive arnold node instances.")
 
         work_template = app.getWorkFileTemplate()
