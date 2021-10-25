@@ -85,11 +85,13 @@ class HoudiniSessionCollector(HookBaseClass):
         self._alembic_nodes_collected = False
         self._mantra_nodes_collected = False
         self._arnold_nodes_collected = False
+        self._renderman_nodes_collected = False
 
         # methods to collect tk alembic/mantra/cache nodes if the app is installed
         self.collect_tk_alembicnodes(item)
         self.collect_tk_mantranodes(item)
         self.collect_tk_arnoldnodes(item)
+        self.collect_tk_rendermannodes(item)
         self.collect_tk_cachenodes(item)
         self.collect_tk_usdropnodes(item)
 
@@ -469,7 +471,7 @@ class HoudiniSessionCollector(HookBaseClass):
             )
             return
 
-        htoa_env = os.getenv('HTOA')
+        htoa_env = os.getenv("HTOA")
         if not htoa_env:
             self.logger.debug(
                 "Arnold is not loaded. Skipping collection of Arnold nodes."
@@ -549,3 +551,114 @@ class HoudiniSessionCollector(HookBaseClass):
                 "Setting publish name to %s"
                 % (publisher.util.get_publish_name(aov[1], sequence=True))
             )
+
+    def collect_tk_rendermannodes(self, parent_item):
+        # This function will check all the SGTK RenderMan nodes (in Solaris) for files,
+        # and if found, add them to the collector
+
+        # Get Engine and Publisher
+        publisher = self.parent
+        engine = publisher.engine
+
+        # Check if RenderMan app is installed
+        app = engine.apps.get("tk-houdini-renderman")
+        if not app:
+            self.logger.debug(
+                "The tk-houdini-renderman app is not installed. Skipping collection of those nodes."
+            )
+            return
+
+        # Make sure to only execute the collector when RenderMan is loaded
+        rman_env = os.getenv("RMANTREE")
+        if not rman_env:
+            self.logger.debug(
+                "RenderMan is not loaded. Skipping collection of RenderMan nodes."
+            )
+            return
+
+        # Get all the RenderMan node instances, if no found, skip collector
+        try:
+            nodes = app.get_all_renderman_nodes()
+        except Exception as e:
+            self.logger.error("Could not receive renderman node instances. %s" % str(e))
+            return
+
+        # Get the work file template from the app
+        work_template = app.get_work_template()
+
+        # Iterate trough every node that has been found
+        for node in nodes:
+
+            # Get the output path on the RenderMan node
+            output_path = app.get_output_path(node)
+
+            # Check if there is an output path
+            if len(output_path) > 0:
+                # If no output path found, skip collector
+                if not os.path.exists(output_path):
+                    continue
+
+                # Make sure file has not already been published
+                if not app.handler.get_published_status(node):
+                    self.logger.info("Processing sgtk_hdprman node: %s" % node.path())
+
+                    # Create the item to publish
+                    item = super(HoudiniSessionCollector, self)._collect_file(
+                        parent_item, output_path, frame_sequence=True
+                    )
+
+                    # Set the name for the publisher UI
+                    render_name = app.get_render_name(node)
+                    node_path = os.path.basename(node.path())
+                    item.name = "Render (%s)" % render_name + ", " + node_path
+
+                    # Add the work template to the list
+                    if work_template:
+                        item.properties["work_template"] = work_template
+
+                    # Generate the publish name, and set it
+                    publish_name = publisher.util.get_publish_name(
+                        output_path, sequence=True
+                    )
+                    self.logger.info("Setting publish name to %s" % publish_name)
+                    item.properties.publish_name = publish_name
+
+                    # Check all the filter parameters for files
+                    self.__collect_tk_rendermanfilters(node, item, app, work_template)
+
+                    # Return a true value because files have been found
+                    self._renderman_nodes_collected = True
+
+    def __collect_tk_rendermanfilters(self, node, parent_item, app, work_template):
+        # This function will scan every filter that is activated for files,
+        # and if files found, add them to the collector
+        publisher = self.parent
+
+        # Get all the filter parameters that have been set
+        filters = app.handler.get_filters_output(node)
+
+        # Iterate trough
+        for filter in filters:
+            filter_name = filter.get("name")
+            filter_path = filter.get("path")
+            if not os.path.exists(filter_path):
+                continue
+
+            subitem = super(HoudiniSessionCollector, self)._collect_file(
+                parent_item, filter_path, frame_sequence=True
+            )
+
+            # sub-item created, update gui
+            subitem.name = filter_name
+
+            # add worktemplate to every subitem
+            if work_template:
+                subitem.properties["work_template"] = work_template
+
+            sub_publish_name = publisher.util.get_publish_name(
+                filter_path, sequence=True
+            )
+
+            self.logger.info("Setting publish name to %s" % sub_publish_name)
+
+            subitem.properties.publish_name = sub_publish_name
