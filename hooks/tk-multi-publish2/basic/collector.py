@@ -484,7 +484,12 @@ class HoudiniSessionCollector(HookBaseClass):
         except Exception as e:
             self.logger.error("Could not receive arnold node instances. %s" % str(e))
 
-        work_template = app.getWorkFileTemplate()
+        work_template = app.get_work_file_template()
+        publish_template = app.get_publish_file_template()
+
+        frame_range = hou.playbar.playbackRange()
+        first_frame = int(frame_range[0])
+        last_frame = int(frame_range[1])
 
         # run collection on every node instance found
         for node in nodes:
@@ -505,8 +510,10 @@ class HoudiniSessionCollector(HookBaseClass):
             item.name = "Beauty Render (%s)" % (node.path())
 
             # update item with work_template for later fields use
-            if work_template:
-                item.properties["work_template"] = work_template
+            item.properties["work_template"] = work_template
+            item.properties["publish_template"] = publish_template
+            item.properties["first_frame"] = first_frame
+            item.properties["last_frame"] = last_frame
 
             self.logger.info(
                 "Setting publish name to %s"
@@ -585,6 +592,11 @@ class HoudiniSessionCollector(HookBaseClass):
 
         # Get the work file template from the app
         work_template = app.get_work_template()
+        publish_template = app.get_publish_template()
+
+        frame_range = hou.playbar.playbackRange()
+        first_frame = int(frame_range[0])
+        last_frame = int(frame_range[1])
 
         # Iterate trough every node that has been found
         for node in nodes:
@@ -613,8 +625,10 @@ class HoudiniSessionCollector(HookBaseClass):
                     item.name = "Render (%s)" % render_name + ", " + node_path
 
                     # Add the work template to the list
-                    if work_template:
-                        item.properties["work_template"] = work_template
+                    item.properties["work_template"] = work_template
+                    item.properties["publish_template"] = publish_template
+                    item.properties["first_frame"] = first_frame
+                    item.properties["last_frame"] = last_frame
 
                     # Generate the publish name, and set it
                     publish_name = publisher.util.get_publish_name(
