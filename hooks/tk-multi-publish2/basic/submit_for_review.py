@@ -122,6 +122,7 @@ class HoudiniDeadlineSubmitForReviewPlugin(HookBaseClass):
         """
 
         accepted = True
+        checked = False
         review_submission_app = self.parent.engine.apps.get(
             "tk-multi-deadlinereviewsubmission"
         )
@@ -151,6 +152,13 @@ class HoudiniDeadlineSubmitForReviewPlugin(HookBaseClass):
                 "'path' property is not defined on the item. "
                 "Item will be skipped: %s." % (item.properties["publish_name"],)
             )
+        # Determine if item should be checked or not
+        output_template = item.properties.get("publish_template")
+        if output_template is None:
+            self.logger.debug("No output template found."
+                              "Item will be skipped: %s." % (item.properties["publish_name"])
+                              )
+            accepted = False
 
         if accepted:
             # log the accepted file and display a button to reveal it in the fs
@@ -159,18 +167,14 @@ class HoudiniDeadlineSubmitForReviewPlugin(HookBaseClass):
                 extra={"action_show_folder": {"path": path}},
             )
 
-        # Determine if item should be checked or not
-        output_template = item.properties.get("publish_template")
-        output_fields = output_template.get_fields(path)
+            output_fields = output_template.get_fields(path)
 
-        render_name = output_fields.get('name')
+            render_name = output_fields.get('name')
 
-        checked_filenames = ('main', 'beauty', 'master')
+            checked_filenames = ('main', 'beauty', 'master')
 
-        if render_name in checked_filenames:
-            checked = True
-        else:
-            checked = False
+            if render_name in checked_filenames:
+                checked = True
 
         return {"accepted": accepted, "checked": checked}
 
@@ -248,7 +252,7 @@ class HoudiniDeadlineSubmitForReviewPlugin(HookBaseClass):
 
         if version:
             self.logger.info(
-                "Version uploaded for file: %s" % (render_path,),
+                "File sequence submitted for review to Deadline: %s" % (render_path,),
                 extra={
                     "action_show_in_ShotGrid": {
                         "label": "Show Version",
