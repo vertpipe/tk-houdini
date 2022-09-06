@@ -28,7 +28,9 @@ class HoudiniDeadlineSubmitForReviewPlugin(HookBaseClass):
         """
 
         # look for icon one level up from this hook's folder in "icons" folder
-        return os.path.join(self.disk_location, os.pardir, "icons", "review.png")
+        return os.path.join(
+            self.disk_location, os.pardir, "icons", "review.png"
+        )
 
     @property
     def name(self):
@@ -136,28 +138,32 @@ class HoudiniDeadlineSubmitForReviewPlugin(HookBaseClass):
             accepted = False
             self.logger.debug(
                 "'first_frame' property is not defined on the item. "
-                "Item will be skipped: %s." % (item.properties["publish_name"],)
+                "Item will be skipped: %s."
+                % (item.properties["publish_name"],)
             )
         if item.properties.get("last_frame") is None:
             accepted = False
             self.logger.debug(
                 "'last_frame' property is not defined on the item. "
-                "Item will be skipped: %s." % (item.properties["publish_name"],)
+                "Item will be skipped: %s."
+                % (item.properties["publish_name"],)
             )
-        path = item.properties.get("path").replace(os.sep, '/')
+        path = item.properties.get("path").replace(os.sep, "/")
 
         if path is None:
             accepted = False
             self.logger.debug(
                 "'path' property is not defined on the item. "
-                "Item will be skipped: %s." % (item.properties["publish_name"],)
+                "Item will be skipped: %s."
+                % (item.properties["publish_name"],)
             )
         # Determine if item should be checked or not
         output_template = item.properties.get("publish_template")
         if output_template is None:
-            self.logger.debug("No output template found."
-                              "Item will be skipped: %s." % (item.properties["publish_name"])
-                              )
+            self.logger.debug(
+                "No output template found."
+                "Item will be skipped: %s." % (item.properties["publish_name"])
+            )
             accepted = False
 
         if accepted:
@@ -169,9 +175,9 @@ class HoudiniDeadlineSubmitForReviewPlugin(HookBaseClass):
 
             output_fields = output_template.get_fields(path)
 
-            render_name = output_fields.get('name')
+            render_name = output_fields.get("name")
 
-            checked_filenames = ('main', 'beauty', 'master')
+            checked_filenames = ("main", "beauty", "master")
 
             if render_name in checked_filenames:
                 checked = True
@@ -202,17 +208,17 @@ class HoudiniDeadlineSubmitForReviewPlugin(HookBaseClass):
         :param item: Item to process
         """
 
-        render_path = item.properties.get("path").replace(os.sep, '/')
+        render_path = item.properties.get("path").replace(os.sep, "/")
 
         sg_publish_data = item.properties.get("sg_publish_data")
         if sg_publish_data is None:
             raise Exception(
                 "'sg_publish_data' was not found in the item's properties. "
                 "Review Submission for '%s' failed. This property must "
-                "be set by a publish plugin that has run before this one." % render_path
+                "be set by a publish plugin that has run before this one."
+                % render_path
             )
 
-        comment = item.description
         tk_multi_deadlinereviewsubmission = self.parent.engine.apps.get(
             "tk-multi-deadlinereviewsubmission"
         )
@@ -236,23 +242,19 @@ class HoudiniDeadlineSubmitForReviewPlugin(HookBaseClass):
         last_frame = item.properties.get("last_frame")
         fps = int(hou.fps())
 
-        filename = hou.hipFile.basename()
-        filename = os.path.splitext(filename)[0]
-
         version = tk_multi_deadlinereviewsubmission.submit_version(
-            publish_template,
-            render_path_fields,
-            [sg_publish_data],
-            first_frame,
-            last_frame,
-            fps,
-            filename,
-            comment,
+            template=publish_template,
+            fields=render_path_fields,
+            publish=sg_publish_data,
+            first_frame=first_frame,
+            last_frame=last_frame,
+            fps=fps,
         )
 
         if version:
             self.logger.info(
-                "File sequence submitted for review to Deadline: %s" % (render_path,),
+                "File sequence submitted for review to Deadline: %s"
+                % (render_path,),
                 extra={
                     "action_show_in_ShotGrid": {
                         "label": "Show Version",
