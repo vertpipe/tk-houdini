@@ -242,14 +242,15 @@ class HoudiniDeadlineSubmitForReviewPlugin(HookBaseClass):
         last_frame = item.properties.get("last_frame")
         fps = int(hou.fps())
 
-        version = tk_multi_deadlinereviewsubmission.submit_version(
-            template=publish_template,
-            fields=render_path_fields,
-            publish=sg_publish_data,
-            first_frame=first_frame,
-            last_frame=last_frame,
-            fps=fps,
-        )
+        for data in sg_publish_data:
+            version = tk_multi_deadlinereviewsubmission.submit_version(
+                template=publish_template,
+                fields=render_path_fields,
+                publish=data,
+                first_frame=first_frame,
+                last_frame=last_frame,
+                fps=fps,
+            )
 
         if version:
             self.logger.info(
